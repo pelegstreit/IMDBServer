@@ -4,7 +4,6 @@ import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-// import process from 'process';
 import {connectDB} from './data base/mongoose.connection.mjs';
 import {error_handler, not_found} from './middleware/errors.handler.mjs';
 
@@ -15,7 +14,6 @@ import mongoose from 'mongoose';
 
 //global varibale
 const { PORT,HOST, DB_URI } = process.env;
-// const NODE_ENV = process.env.NODE_ENV;
 const JWT_SECERT= "dkvdjbgnskjgkelfsbegsejkjgs";
 //define express app
 const app = express();
@@ -28,6 +26,28 @@ app.use(bodyParser.json());
 const User = mongoose.model("user");
 
 //routing
+app.put("/addmovie", async (req,res) =>{
+  console.log("/addmovie started");
+  const {token, movieIDObj} = req.body;
+  try {
+   
+    console.log("token:", token, "movieIDObj:", movieIDObj);
+    const user = jwt.verify(token, JWT_SECERT);
+    console.log(user);
+    const usermail= {mail:user.mail};
+    console.log("usermail:",usermail);
+    const newUser = await User.findOneAndUpdate(usermail,movieIDObj,{
+      new:true, upsert:false
+  });
+    res.send({status: "ok", newuser: newUser, themovie: movieIDObj});
+  } catch (error) {
+  console.log(error);
+  }
+  });
+
+
+
+
 app.use('/user', userRouter);
 
 
@@ -49,8 +69,8 @@ app.post('/register', async(req,res)=> {
 });
 
 app.post("/login", async (req, res) => {
+  console.log("/login started");
   const { mail, password } = req.body;
-
   const user = await User.findOne({ mail });
   if (!user) {
     return res.json({ error: "User was not found" });
@@ -72,6 +92,7 @@ app.post("/userdata", async (req,res) =>{
 const {token} = req.body;
 try {
   const user = jwt.verify(token, JWT_SECERT);
+  console.log(user);
   const usermail= user.mail;
   User.findOne({mail: usermail}). then((data)=>{
     res.send({status: "ok", data: data});
@@ -82,6 +103,10 @@ try {
   
 }
 });
+
+
+
+
 
 app.use(error_handler);
 app.use('*', not_found);
